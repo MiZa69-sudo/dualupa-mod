@@ -29,7 +29,7 @@ public class DuaLupaButton extends ButtonWidget {
     private final Style style;
 
     public DuaLupaButton(int x, int y, int width, int height, Text message, PressAction onPress, Style style) {
-        super(x, y, width, height, message, onPress, (button) -> button.getMessage());
+        super(x, y, width, height, message, onPress, null);
         this.style = style;
     }
 
@@ -64,28 +64,23 @@ public class DuaLupaButton extends ButtonWidget {
         int w = this.width;
         int h = this.height;
 
-        // Внешнее свечение (если hover)
         if (this.isHovered() && this.active) {
             ctx.fill(x - 3, y - 3, x + w + 3, y + h + 3, glowColor);
             ctx.fill(x - 2, y - 2, x + w + 2, y + h + 2, glowColor);
             ctx.fill(x - 1, y - 1, x + w + 1, y + h + 1, glowColor);
         }
 
-        // Основной фон (градиент сверху вниз)
         drawVerticalGradient(ctx, x, y, x + w, y + h, bgColor, darken(bgColor, 0.6f));
 
-        // Верхняя светлая полоска (блик)
         if (this.active && !this.isHovered()) {
             ctx.fill(x + 1, y + 1, x + w - 1, y + 2, 0x33FFFFFF);
         }
 
-        // Рамка
         ctx.fill(x, y, x + w, y + 1, borderColor);
         ctx.fill(x, y + h - 1, x + w, y + h, borderColor);
         ctx.fill(x, y, x + 1, y + h, borderColor);
         ctx.fill(x + w - 1, y, x + w, y + h, borderColor);
 
-        // Текст по центру
         ctx.drawCenteredTextWithShadow(client.textRenderer, this.getMessage(),
             x + w / 2, y + (h - 8) / 2, textColor);
     }
