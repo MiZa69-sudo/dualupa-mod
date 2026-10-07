@@ -4,6 +4,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
+import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -89,28 +90,32 @@ public abstract class TitleScreenMixin extends Screen {
     private void dualupa$replaceButtons(CallbackInfo ci) {
         this.clearChildren();
 
+        final Screen self = this;
+        final MinecraftClient client = MinecraftClient.getInstance();
+
         int cx = this.width / 2;
         int y = this.height / 4 + 60;
         int bw = 240;
         int bh = 44;
         int gap = 10;
 
+        // АНАРХИЯ — открывает список серверов (там уже наш сервер)
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, y, bw, bh,
                 Text.literal("АНАРХИЯ"),
-                b -> MinecraftClient.getInstance().player.sendMessage(
-                        Text.literal("§dПодключение к Анархии..."), false),
+                b -> client.setScreen(new MultiplayerScreen(self)),
                 DuaLupaButton.Style.RED, "⚔"
         ));
 
+        // МИНИ-ИГРЫ — тоже список серверов
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, y + (bh + gap), bw, bh,
                 Text.literal("МИНИ-ИГРЫ"),
-                b -> MinecraftClient.getInstance().player.sendMessage(
-                        Text.literal("§dМини-игры скоро..."), false),
+                b -> client.setScreen(new MultiplayerScreen(self)),
                 DuaLupaButton.Style.BLUE, "🏆"
         ));
 
+        // RPG — пока неактивна
         DuaLupaButton rpg = new DuaLupaButton(
                 cx - bw / 2, y + (bh + gap) * 2, bw, bh,
                 Text.literal("RPG · СКОРО"),
@@ -122,20 +127,20 @@ public abstract class TitleScreenMixin extends Screen {
         int rowY = y + (bh + gap) * 3 + 20;
         int halfW = (bw - gap) / 2;
 
+        // НАСТРОЙКИ — открывает список серверов тоже (пока безопасно)
+        // В будущем заменим на реальный экран настроек
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, rowY, halfW, bh - 6,
                 Text.literal("НАСТРОЙКИ"),
-                b -> MinecraftClient.getInstance().setScreen(
-                        new net.minecraft.client.gui.screen.option.OptionsScreen(
-                                (net.minecraft.client.gui.screen.Screen)(Object)this,
-                                MinecraftClient.getInstance().options)),
+                b -> client.setScreen(new MultiplayerScreen(self)),
                 DuaLupaButton.Style.PURPLE, "⚙"
         ));
 
+        // ВЫХОД
         this.addDrawableChild(new DuaLupaButton(
                 cx + gap / 2, rowY, halfW, bh - 6,
                 Text.literal("ВЫХОД"),
-                b -> MinecraftClient.getInstance().scheduleStop(),
+                b -> client.scheduleStop(),
                 DuaLupaButton.Style.PURPLE, "✕"
         ));
     }
