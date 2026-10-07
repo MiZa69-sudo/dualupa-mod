@@ -8,102 +8,137 @@ import net.minecraft.text.Text;
 public class DuaLupaButton extends ButtonWidget {
 
     public enum Style {
-        RED(0xFF6B1B1B, 0xFFFF4444, 0xFFFF8888),
-        BLUE(0xFF1B3B6B, 0xFF00CCFF, 0xFF55FFFF),
-        GOLD(0xFF6B5010, 0xFFFFD700, 0xFFFFF0A0),
-        GRAY(0xFF1E1E26, 0xFF555566, 0xFF888899),
-        DARK(0xFF0E0E14, 0xFF333340, 0xFF555566),
-        PURPLE(0xFF3D1B6B, 0xFF9633F9, 0xFFB57EEC);
+        //   bg-light     bg-dark       border      glow          top-hi
+        PURPLE(0xFF9633F9, 0xFF5B1FA8, 0xFF000000, 0xFFFF5FFF, 0xFFE6C4FF),
+        RED   (0xFFFF4444, 0xFF8B1010, 0xFF000000, 0xFFFF5555, 0xFFFF9999),
+        BLUE  (0xFF3BAAFF, 0xFF125C99, 0xFF000000, 0xFF55CCFF, 0xFFB0E0FF),
+        GOLD  (0xFFFFD700, 0xFF9A7A00, 0xFF000000, 0xFFFFEE88, 0xFFFFF3B0),
+        GRAY  (0xFF6E6E7A, 0xFF2A2A38, 0xFF000000, 0xFF9999AA, 0xFFB0B0C0);
 
-        public final int bg;
+        public final int bgLight;
+        public final int bgDark;
         public final int border;
         public final int glow;
+        public final int topHi;
 
-        Style(int bg, int border, int glow) {
-            this.bg = bg;
+        Style(int bgLight, int bgDark, int border, int glow, int topHi) {
+            this.bgLight = bgLight;
+            this.bgDark = bgDark;
             this.border = border;
             this.glow = glow;
+            this.topHi = topHi;
         }
     }
 
     private final Style style;
+    private final String iconText;
 
-    public DuaLupaButton(int x, int y, int width, int height, Text message, PressAction onPress, Style style) {
+    public DuaLupaButton(int x, int y, int width, int height, Text message,
+                         PressAction onPress, Style style, String iconText) {
         super(x, y, width, height, message, onPress, null);
         this.style = style;
+        this.iconText = iconText;
+    }
+
+    public DuaLupaButton(int x, int y, int width, int height, Text message,
+                         PressAction onPress, Style style) {
+        this(x, y, width, height, message, onPress, style, null);
     }
 
     @Override
     protected void renderWidget(DrawContext ctx, int mouseX, int mouseY, float delta) {
         MinecraftClient client = MinecraftClient.getInstance();
-
-        int bgColor;
-        int borderColor;
-        int textColor;
-        int glowColor;
-
-        if (!this.active) {
-            bgColor = 0x33FFFFFF;
-            borderColor = 0xFF444444;
-            textColor = 0xFF666666;
-            glowColor = 0x00000000;
-        } else if (this.isHovered()) {
-            bgColor = this.style.border | 0xFF000000;
-            borderColor = 0xFFFFFFFF;
-            textColor = 0xFF000000;
-            glowColor = (this.style.glow & 0x00FFFFFF) | 0x80000000;
-        } else {
-            bgColor = this.style.bg | 0xFF000000;
-            borderColor = this.style.border | 0xFF000000;
-            textColor = 0xFFFFFFFF;
-            glowColor = (this.style.border & 0x00FFFFFF) | 0x40000000;
-        }
-
         int x = this.getX();
         int y = this.getY();
         int w = this.width;
         int h = this.height;
 
-        if (this.isHovered() && this.active) {
-            ctx.fill(x - 3, y - 3, x + w + 3, y + h + 3, glowColor);
-            ctx.fill(x - 2, y - 2, x + w + 2, y + h + 2, glowColor);
-            ctx.fill(x - 1, y - 1, x + w + 1, y + h + 1, glowColor);
+        boolean hover = this.isHovered() && this.active;
+
+        // --- 1. ВНЕШНЕЕ СВЕЧЕНИЕ (ховер) ---
+        if (hover) {
+            int glowOuter = (this.style.glow & 0x00FFFFFF) | 0x40000000;
+            int glowInner = (this.style.glow & 0x00FFFFFF) | 0x70000000;
+            // мягкое свечение в 3 слоя
+            ctx.fill(x - 4, y - 4, x + w + 4, y + h + 4, glowOuter);
+            ctx.fill(x - 3, y - 3, x + w + 3, y + h + 3, glowOuter);
+            ctx.fill(x - 2, y - 2, x + w + 2, y + h + 2, glowInner);
         }
 
-        drawVerticalGradient(ctx, x, y, x + w, y + h, bgColor, darken(bgColor, 0.6f));
+        // --- 2. ЧЁРНАЯ РАМКА (2px) ---
+        int border = 0xFF000000;
+        ctx.fill(x - 2, y - 2, x + w + 2, y - 1, border);         // top
+        ctx.fill(x - 2, y + h + 1, x + w + 2, y + h + 2, border); // bottom
+        ctx.fill(x - 2, y - 2, x - 1, y + h + 2, border);         // left
+        ctx.fill(x + w + 1, y - 2, x + w + 2, y + h + 2, border); // right
 
-        if (this.active && !this.isHovered()) {
-            ctx.fill(x + 1, y + 1, x + w - 1, y + 2, 0x33FFFFFF);
+        // --- 3. ЗАЛИВКА (градиент bgLight -> bgDark) ---
+        int top    = hover ? brighten(this.style.bgLight, 1.15f) : this.style.bgLight;
+        int bottom = hover ? brighten(this.style.bgDark,  1.15f) : this.style.bgDark;
+        drawPixelGradient(ctx, x, y, x + w, y + h, top, bottom);
+
+        // --- 4. ВЕРХНИЙ БЛИК (1px светлая полоска) ---
+        int hi = hover ? brighten(this.style.topHi, 1.2f) : this.style.topHi;
+        ctx.fill(x, y, x + w, y + 1, hi);
+        // второй полу-блик
+        ctx.fill(x, y + 1, x + w, y + 2, (hi & 0x00FFFFFF) | 0x55000000);
+
+        // --- 5. НИЖНЯЯ ТЕНЬ (1px тёмная полоска) ---
+        int sh = darken(bottom, 0.5f);
+        ctx.fill(x, y + h - 1, x + w, y + h, sh);
+
+        // --- 6. ЛЁГКИЕ БОКОВЫЕ АКЦЕНТЫ ---
+        int sideLight = (this.style.topHi & 0x00FFFFFF) | 0x33FFFFFF;
+        int sideDark  = 0x33000000;
+        ctx.fill(x, y + 1, x + 1, y + h - 1, sideLight);
+        ctx.fill(x + w - 1, y + 1, x + w, y + h - 1, sideDark);
+
+        // --- 7. ТЕКСТ ---
+        int textColor = this.active ? 0xFFFFFFFF : 0xFF8A8A9A;
+        int textX = x + w / 2;
+        int textY = y + (h - 8) / 2;
+
+        // если есть иконка — сдвигаем текст и рисуем иконку слева
+        if (this.iconText != null && !this.iconText.isEmpty()) {
+            int iconWidth = client.textRenderer.getWidth(this.iconText);
+            int totalWidth = iconWidth + 6 + client.textRenderer.getWidth(this.getMessage());
+            int startX = x + (w - totalWidth) / 2;
+
+            ctx.drawTextWithShadow(client.textRenderer, this.iconText,
+                    startX, textY, textColor);
+            ctx.drawTextWithShadow(client.textRenderer, this.getMessage(),
+                    startX + iconWidth + 6, textY, textColor);
+        } else {
+            ctx.drawCenteredTextWithShadow(client.textRenderer, this.getMessage(),
+                    textX, textY, textColor);
         }
 
-        ctx.fill(x, y, x + w, y + 1, borderColor);
-        ctx.fill(x, y + h - 1, x + w, y + h, borderColor);
-        ctx.fill(x, y, x + 1, y + h, borderColor);
-        ctx.fill(x + w - 1, y, x + w, y + h, borderColor);
-
-        ctx.drawCenteredTextWithShadow(client.textRenderer, this.getMessage(),
-            x + w / 2, y + (h - 8) / 2, textColor);
+        // --- 8. МЯГКИЙ INNER GLOW при ховере ---
+        if (hover) {
+            int inGlow = (this.style.glow & 0x00FFFFFF) | 0x33000000;
+            ctx.fill(x, y + 1, x + w, y + 3, inGlow);
+        }
     }
 
-    private void drawVerticalGradient(DrawContext ctx, int x1, int y1, int x2, int y2, int colorTop, int colorBottom) {
+    /** Дискретный «пиксельный» градиент — 8 ступеней, как в OneBlock. */
+    private void drawPixelGradient(DrawContext ctx, int x1, int y1, int x2, int y2,
+                                   int topColor, int bottomColor) {
         int height = y2 - y1;
         if (height <= 0) return;
-        for (int i = 0; i < height; i++) {
-            float t = (float) i / height;
-            int c = lerpColor(colorTop, colorBottom, t);
-            ctx.fill(x1, y1 + i, x2, y1 + i + 1, c);
+        int steps = 8;
+        int stepH = Math.max(1, height / steps);
+        for (int s = 0; s < steps; s++) {
+            float t = (float) s / (steps - 1);
+            int c = lerpColor(topColor, bottomColor, t);
+            int sy = y1 + s * stepH;
+            int ey = (s == steps - 1) ? y2 : sy + stepH;
+            ctx.fill(x1, sy, x2, ey, c);
         }
     }
 
     private int lerpColor(int a, int b, float t) {
-        int aa = (a >> 24) & 0xFF;
-        int ar = (a >> 16) & 0xFF;
-        int ag = (a >> 8) & 0xFF;
-        int ab = a & 0xFF;
-        int ba = (b >> 24) & 0xFF;
-        int br = (b >> 16) & 0xFF;
-        int bg = (b >> 8) & 0xFF;
-        int bb = b & 0xFF;
+        int aa = (a >>> 24) & 0xFF, ar = (a >>> 16) & 0xFF, ag = (a >>> 8) & 0xFF, ab = a & 0xFF;
+        int ba = (b >>> 24) & 0xFF, br = (b >>> 16) & 0xFF, bg = (b >>> 8) & 0xFF, bb = b & 0xFF;
         int ra = (int) (aa + (ba - aa) * t);
         int rr = (int) (ar + (br - ar) * t);
         int rg = (int) (ag + (bg - ag) * t);
@@ -111,11 +146,15 @@ public class DuaLupaButton extends ButtonWidget {
         return (ra << 24) | (rr << 16) | (rg << 8) | rb;
     }
 
-    private int darken(int color, float factor) {
-        int a = (color >> 24) & 0xFF;
-        int r = Math.min(255, (int) (((color >> 16) & 0xFF) * factor));
-        int g = Math.min(255, (int) (((color >> 8) & 0xFF) * factor));
-        int b = Math.min(255, (int) ((color & 0xFF) * factor));
+    private int brighten(int color, float f) {
+        int a = (color >>> 24) & 0xFF;
+        int r = Math.min(255, (int) (((color >>> 16) & 0xFF) * f));
+        int g = Math.min(255, (int) (((color >>> 8) & 0xFF) * f));
+        int b = Math.min(255, (int) ((color & 0xFF) * f));
         return (a << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    private int darken(int color, float f) {
+        return brighten(color, f);
     }
 }
