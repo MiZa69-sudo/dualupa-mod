@@ -1,0 +1,12 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "ru.dualupa.menu",
+    "compatibilityLevel": "JAVA_21",
+    "client": [
+        "TitleScreenMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}
