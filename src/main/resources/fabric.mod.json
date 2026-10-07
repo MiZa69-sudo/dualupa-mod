@@ -1,20 +1,24 @@
 {
-  "schemaVersion": 1,
-  "id": "dualupa-menu",
-  "version": "1.0.0",
-  "name": "DUA LUPA Custom Menu",
-  "description": "Кастомное главное меню DUA LUPA",
-  "authors": ["DUA LUPA Team"],
-  "license": "MIT",
-  "environment": "client",
-  "entrypoints": {
-    "client": ["ru.dualupa.menu.DuaLupaMenuMod"]
-  },
-  "mixins": ["dualupa-menu.mixins.json"],
-  "depends": {
-    "fabricloader": ">=0.16.0",
-    "minecraft": "~1.21.4",
-    "java": ">=21",
-    "fabric-api": "*"
-  }
+    "schemaVersion": 1,
+    "id": "dualupa",
+    "version": "${version}",
+    "name": "DUA LUPA Menu Mod",
+    "description": "Кастомное меню проекта DUA LUPA",
+    "authors": ["MiZa69"],
+    "license": "MIT",
+    "environment": "client",
+    "entrypoints": {
+        "client": [
+            "ru.dualupa.DuaLupaModClient"
+        ]
+    },
+    "mixins": [
+        "dualupa.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.16.0",
+        "minecraft": "~1.21.4",
+        "java": ">=21",
+        "fabric-api": "*"
+    }
 }
