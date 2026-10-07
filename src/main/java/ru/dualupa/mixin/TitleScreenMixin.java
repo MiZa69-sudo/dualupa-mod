@@ -2,9 +2,9 @@ package ru.dualupa.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ConnectScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
+import net.minecraft.client.gui.screen.multiplayer.ConnectScreen;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.text.Text;
@@ -21,7 +21,6 @@ public abstract class TitleScreenMixin extends Screen {
 
     protected TitleScreenMixin(Text title) { super(title); }
 
-    // Наш сервер — единая точка входа для всех режимов.
     private static final String SERVER_IP = "176.108.245.214";
     private static final int    SERVER_PORT = 25565;
     private static final String SERVER_DISPLAY_NAME = "DUA LUPA";
@@ -104,8 +103,7 @@ public abstract class TitleScreenMixin extends Screen {
                 ServerInfo.ServerType.OTHER
         );
 
-        // parent = this (TitleScreen) — чтобы если не подключится, вернуться в наше меню
-        ConnectScreen.connect(this, client, address, info, false);
+        ConnectScreen.connect(this, client, address, info, false, null);
     }
 
     @Inject(method = "init", at = @At("TAIL"))
@@ -120,7 +118,6 @@ public abstract class TitleScreenMixin extends Screen {
         int bh = 44;
         int gap = 10;
 
-        // АНАРХИЯ — прямое подключение к серверу
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, y, bw, bh,
                 Text.literal("АНАРХИЯ"),
@@ -128,7 +125,6 @@ public abstract class TitleScreenMixin extends Screen {
                 DuaLupaButton.Style.RED, "⚔"
         ));
 
-        // МИНИ-ИГРЫ — тоже прямое подключение
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, y + (bh + gap), bw, bh,
                 Text.literal("МИНИ-ИГРЫ"),
@@ -136,7 +132,6 @@ public abstract class TitleScreenMixin extends Screen {
                 DuaLupaButton.Style.BLUE, "🏆"
         ));
 
-        // RPG — пока неактивна
         DuaLupaButton rpg = new DuaLupaButton(
                 cx - bw / 2, y + (bh + gap) * 2, bw, bh,
                 Text.literal("RPG · СКОРО"),
@@ -148,8 +143,6 @@ public abstract class TitleScreenMixin extends Screen {
         int rowY = y + (bh + gap) * 3 + 20;
         int halfW = (bw - gap) / 2;
 
-        // НАСТРОЙКИ — пока открывает OptionsScreen.
-        // Если снова крашнет — заменим на простой заглушку.
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, rowY, halfW, bh - 6,
                 Text.literal("НАСТРОЙКИ"),
@@ -159,14 +152,11 @@ public abstract class TitleScreenMixin extends Screen {
                                 (Screen)(Object)this,
                                 client.options
                         ));
-                    } catch (Throwable t) {
-                        // Тихо игнорируем — если API отличается, кнопка просто ничего не сделает
-                    }
+                    } catch (Throwable t) { /* ignore */ }
                 },
                 DuaLupaButton.Style.PURPLE, "⚙"
         ));
 
-        // ВЫХОД
         this.addDrawableChild(new DuaLupaButton(
                 cx + gap / 2, rowY, halfW, bh - 6,
                 Text.literal("ВЫХОД"),
