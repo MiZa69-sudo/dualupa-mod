@@ -13,7 +13,8 @@ public class DuaLupaButton extends ButtonWidget {
         RED   (0xFFFF4444, 0xFF8B1010, 0xFF000000, 0xFFFF5555, 0xFFFF9999),
         BLUE  (0xFF3BAAFF, 0xFF125C99, 0xFF000000, 0xFF55CCFF, 0xFFB0E0FF),
         GOLD  (0xFFFFD700, 0xFF9A7A00, 0xFF000000, 0xFFFFEE88, 0xFFFFF3B0),
-        GRAY  (0xFF6E6E7A, 0xFF2A2A38, 0xFF000000, 0xFF9999AA, 0xFFB0B0C0);
+        GRAY  (0xFF6E6E7A, 0xFF2A2A38, 0xFF000000, 0xFF9999AA, 0xFFB0B0C0),
+        DARK  (0xFF1E1E26, 0xFF0E0E14, 0xFF000000, 0xFF555566, 0xFF888899);
 
         public final int bgLight;
         public final int bgDark;
@@ -59,7 +60,6 @@ public class DuaLupaButton extends ButtonWidget {
         if (hover) {
             int glowOuter = (this.style.glow & 0x00FFFFFF) | 0x40000000;
             int glowInner = (this.style.glow & 0x00FFFFFF) | 0x70000000;
-            // мягкое свечение в 3 слоя
             ctx.fill(x - 4, y - 4, x + w + 4, y + h + 4, glowOuter);
             ctx.fill(x - 3, y - 3, x + w + 3, y + h + 3, glowOuter);
             ctx.fill(x - 2, y - 2, x + w + 2, y + h + 2, glowInner);
@@ -67,27 +67,26 @@ public class DuaLupaButton extends ButtonWidget {
 
         // --- 2. ЧЁРНАЯ РАМКА (2px) ---
         int border = 0xFF000000;
-        ctx.fill(x - 2, y - 2, x + w + 2, y - 1, border);         // top
-        ctx.fill(x - 2, y + h + 1, x + w + 2, y + h + 2, border); // bottom
-        ctx.fill(x - 2, y - 2, x - 1, y + h + 2, border);         // left
-        ctx.fill(x + w + 1, y - 2, x + w + 2, y + h + 2, border); // right
+        ctx.fill(x - 2, y - 2, x + w + 2, y - 1, border);
+        ctx.fill(x - 2, y + h + 1, x + w + 2, y + h + 2, border);
+        ctx.fill(x - 2, y - 2, x - 1, y + h + 2, border);
+        ctx.fill(x + w + 1, y - 2, x + w + 2, y + h + 2, border);
 
         // --- 3. ЗАЛИВКА (градиент bgLight -> bgDark) ---
         int top    = hover ? brighten(this.style.bgLight, 1.15f) : this.style.bgLight;
         int bottom = hover ? brighten(this.style.bgDark,  1.15f) : this.style.bgDark;
         drawPixelGradient(ctx, x, y, x + w, y + h, top, bottom);
 
-        // --- 4. ВЕРХНИЙ БЛИК (1px светлая полоска) ---
+        // --- 4. ВЕРХНИЙ БЛИК ---
         int hi = hover ? brighten(this.style.topHi, 1.2f) : this.style.topHi;
         ctx.fill(x, y, x + w, y + 1, hi);
-        // второй полу-блик
         ctx.fill(x, y + 1, x + w, y + 2, (hi & 0x00FFFFFF) | 0x55000000);
 
-        // --- 5. НИЖНЯЯ ТЕНЬ (1px тёмная полоска) ---
+        // --- 5. НИЖНЯЯ ТЕНЬ ---
         int sh = darken(bottom, 0.5f);
         ctx.fill(x, y + h - 1, x + w, y + h, sh);
 
-        // --- 6. ЛЁГКИЕ БОКОВЫЕ АКЦЕНТЫ ---
+        // --- 6. БОКОВЫЕ АКЦЕНТЫ ---
         int sideLight = (this.style.topHi & 0x00FFFFFF) | 0x33FFFFFF;
         int sideDark  = 0x33000000;
         ctx.fill(x, y + 1, x + 1, y + h - 1, sideLight);
@@ -95,10 +94,8 @@ public class DuaLupaButton extends ButtonWidget {
 
         // --- 7. ТЕКСТ ---
         int textColor = this.active ? 0xFFFFFFFF : 0xFF8A8A9A;
-        int textX = x + w / 2;
         int textY = y + (h - 8) / 2;
 
-        // если есть иконка — сдвигаем текст и рисуем иконку слева
         if (this.iconText != null && !this.iconText.isEmpty()) {
             int iconWidth = client.textRenderer.getWidth(this.iconText);
             int totalWidth = iconWidth + 6 + client.textRenderer.getWidth(this.getMessage());
@@ -110,17 +107,16 @@ public class DuaLupaButton extends ButtonWidget {
                     startX + iconWidth + 6, textY, textColor);
         } else {
             ctx.drawCenteredTextWithShadow(client.textRenderer, this.getMessage(),
-                    textX, textY, textColor);
+                    x + w / 2, textY, textColor);
         }
 
-        // --- 8. МЯГКИЙ INNER GLOW при ховере ---
+        // --- 8. INNER GLOW при ховере ---
         if (hover) {
             int inGlow = (this.style.glow & 0x00FFFFFF) | 0x33000000;
             ctx.fill(x, y + 1, x + w, y + 3, inGlow);
         }
     }
 
-    /** Дискретный «пиксельный» градиент — 8 ступеней, как в OneBlock. */
     private void drawPixelGradient(DrawContext ctx, int x1, int y1, int x2, int y2,
                                    int topColor, int bottomColor) {
         int height = y2 - y1;
