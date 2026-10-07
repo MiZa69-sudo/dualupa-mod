@@ -2,9 +2,11 @@ package ru.dualupa.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ConnectScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
-import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
+import net.minecraft.client.network.ServerAddress;
+import net.minecraft.client.network.ServerInfo;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,6 +20,11 @@ import java.util.Random;
 public abstract class TitleScreenMixin extends Screen {
 
     protected TitleScreenMixin(Text title) { super(title); }
+
+    // Наш сервер — единая точка входа для всех режимов.
+    private static final String SERVER_IP = "176.108.245.214";
+    private static final int    SERVER_PORT = 25565;
+    private static final String SERVER_DISPLAY_NAME = "DUA LUPA";
 
     private static int[][] STAR_CACHE = null;
     private static final int STAR_COUNT = 140;
@@ -86,12 +93,26 @@ public abstract class TitleScreenMixin extends Screen {
         return (ra << 24) | (rr << 16) | (rg << 8) | rb;
     }
 
+    /** Прямое подключение к нашему серверу. Игрок не видит IP и не может ничего добавить. */
+    private void dualupa$connectToServer() {
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        ServerAddress address = ServerAddress.parse(SERVER_IP + ":" + SERVER_PORT);
+        ServerInfo info = new ServerInfo(
+                SERVER_DISPLAY_NAME,
+                SERVER_IP + ":" + SERVER_PORT,
+                ServerInfo.ServerType.OTHER
+        );
+
+        // parent = this (TitleScreen) — чтобы если не подключится, вернуться в наше меню
+        ConnectScreen.connect(this, client, address, info, false);
+    }
+
     @Inject(method = "init", at = @At("TAIL"))
     private void dualupa$replaceButtons(CallbackInfo ci) {
         this.clearChildren();
 
-        final Screen self = this;
-        final MinecraftClient client = MinecraftClient.getInstance();
+        MinecraftClient client = MinecraftClient.getInstance();
 
         int cx = this.width / 2;
         int y = this.height / 4 + 60;
@@ -99,19 +120,19 @@ public abstract class TitleScreenMixin extends Screen {
         int bh = 44;
         int gap = 10;
 
-        // АНАРХИЯ — открывает список серверов (там уже наш сервер)
+        // АНАРХИЯ — прямое подключение к серверу
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, y, bw, bh,
                 Text.literal("АНАРХИЯ"),
-                b -> client.setScreen(new MultiplayerScreen(self)),
+                b -> dualupa$connectToServer(),
                 DuaLupaButton.Style.RED, "⚔"
         ));
 
-        // МИНИ-ИГРЫ — тоже список серверов
+        // МИНИ-ИГРЫ — тоже прямое подключение
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, y + (bh + gap), bw, bh,
                 Text.literal("МИНИ-ИГРЫ"),
-                b -> client.setScreen(new MultiplayerScreen(self)),
+                b -> dualupa$connectToServer(),
                 DuaLupaButton.Style.BLUE, "🏆"
         ));
 
@@ -127,12 +148,21 @@ public abstract class TitleScreenMixin extends Screen {
         int rowY = y + (bh + gap) * 3 + 20;
         int halfW = (bw - gap) / 2;
 
-        // НАСТРОЙКИ — открывает список серверов тоже (пока безопасно)
-        // В будущем заменим на реальный экран настроек
+        // НАСТРОЙКИ — пока открывает OptionsScreen.
+        // Если снова крашнет — заменим на простой заглушку.
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, rowY, halfW, bh - 6,
                 Text.literal("НАСТРОЙКИ"),
-                b -> client.setScreen(new MultiplayerScreen(self)),
+                b -> {
+                    try {
+                        client.setScreen(new net.minecraft.client.gui.screen.option.OptionsScreen(
+                                (Screen)(Object)this,
+                                client.options
+                        ));
+                    } catch (Throwable t) {
+                        // Тихо игнорируем — если API отличается, кнопка просто ничего не сделает
+                    }
+                },
                 DuaLupaButton.Style.PURPLE, "⚙"
         ));
 
