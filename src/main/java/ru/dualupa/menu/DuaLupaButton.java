@@ -8,7 +8,6 @@ import net.minecraft.text.Text;
 public class DuaLupaButton extends ButtonWidget {
 
     public enum Style {
-        //   bg-light     bg-dark       border      glow          top-hi
         PURPLE(0xFF9633F9, 0xFF5B1FA8, 0xFF000000, 0xFFFF5FFF, 0xFFE6C4FF),
         RED   (0xFFFF4444, 0xFF8B1010, 0xFF000000, 0xFFFF5555, 0xFFFF9999),
         BLUE  (0xFF3BAAFF, 0xFF125C99, 0xFF000000, 0xFF55CCFF, 0xFFB0E0FF),
@@ -36,7 +35,8 @@ public class DuaLupaButton extends ButtonWidget {
 
     public DuaLupaButton(int x, int y, int width, int height, Text message,
                          PressAction onPress, Style style, String iconText) {
-        super(x, y, width, height, message, onPress, null);
+        // ВАЖНО: последний аргумент — NarrationSupplier, NULL нельзя, иначе NullPointerException.
+        super(x, y, width, height, message, onPress, textSupplier -> textSupplier.get());
         this.style = style;
         this.iconText = iconText;
     }
@@ -56,7 +56,6 @@ public class DuaLupaButton extends ButtonWidget {
 
         boolean hover = this.isHovered() && this.active;
 
-        // --- 1. ВНЕШНЕЕ СВЕЧЕНИЕ (ховер) ---
         if (hover) {
             int glowOuter = (this.style.glow & 0x00FFFFFF) | 0x40000000;
             int glowInner = (this.style.glow & 0x00FFFFFF) | 0x70000000;
@@ -65,34 +64,28 @@ public class DuaLupaButton extends ButtonWidget {
             ctx.fill(x - 2, y - 2, x + w + 2, y + h + 2, glowInner);
         }
 
-        // --- 2. ЧЁРНАЯ РАМКА (2px) ---
         int border = 0xFF000000;
         ctx.fill(x - 2, y - 2, x + w + 2, y - 1, border);
         ctx.fill(x - 2, y + h + 1, x + w + 2, y + h + 2, border);
         ctx.fill(x - 2, y - 2, x - 1, y + h + 2, border);
         ctx.fill(x + w + 1, y - 2, x + w + 2, y + h + 2, border);
 
-        // --- 3. ЗАЛИВКА (градиент bgLight -> bgDark) ---
         int top    = hover ? brighten(this.style.bgLight, 1.15f) : this.style.bgLight;
         int bottom = hover ? brighten(this.style.bgDark,  1.15f) : this.style.bgDark;
         drawPixelGradient(ctx, x, y, x + w, y + h, top, bottom);
 
-        // --- 4. ВЕРХНИЙ БЛИК ---
         int hi = hover ? brighten(this.style.topHi, 1.2f) : this.style.topHi;
         ctx.fill(x, y, x + w, y + 1, hi);
         ctx.fill(x, y + 1, x + w, y + 2, (hi & 0x00FFFFFF) | 0x55000000);
 
-        // --- 5. НИЖНЯЯ ТЕНЬ ---
         int sh = darken(bottom, 0.5f);
         ctx.fill(x, y + h - 1, x + w, y + h, sh);
 
-        // --- 6. БОКОВЫЕ АКЦЕНТЫ ---
         int sideLight = (this.style.topHi & 0x00FFFFFF) | 0x33FFFFFF;
         int sideDark  = 0x33000000;
         ctx.fill(x, y + 1, x + 1, y + h - 1, sideLight);
         ctx.fill(x + w - 1, y + 1, x + w, y + h - 1, sideDark);
 
-        // --- 7. ТЕКСТ ---
         int textColor = this.active ? 0xFFFFFFFF : 0xFF8A8A9A;
         int textY = y + (h - 8) / 2;
 
@@ -110,7 +103,6 @@ public class DuaLupaButton extends ButtonWidget {
                     x + w / 2, textY, textColor);
         }
 
-        // --- 8. INNER GLOW при ховере ---
         if (hover) {
             int inGlow = (this.style.glow & 0x00FFFFFF) | 0x33000000;
             ctx.fill(x, y + 1, x + w, y + 3, inGlow);
