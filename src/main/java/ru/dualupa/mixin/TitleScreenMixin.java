@@ -92,7 +92,6 @@ public abstract class TitleScreenMixin extends Screen {
         return (ra << 24) | (rr << 16) | (rg << 8) | rb;
     }
 
-    /** Прямое подключение к нашему серверу. Игрок не видит IP и не может ничего добавить. */
     private void dualupa$connectToServer() {
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -118,6 +117,7 @@ public abstract class TitleScreenMixin extends Screen {
         int bh = 44;
         int gap = 10;
 
+        // АНАРХИЯ — рабочая, ведёт на сервер
         this.addDrawableChild(new DuaLupaButton(
                 cx - bw / 2, y, bw, bh,
                 Text.literal("АНАРХИЯ"),
@@ -125,13 +125,16 @@ public abstract class TitleScreenMixin extends Screen {
                 DuaLupaButton.Style.RED, "⚔"
         ));
 
-        this.addDrawableChild(new DuaLupaButton(
+        // МИНИ-ИГРЫ — пока СКОРО, сервер в разработке
+        DuaLupaButton mini = new DuaLupaButton(
                 cx - bw / 2, y + (bh + gap), bw, bh,
-                Text.literal("МИНИ-ИГРЫ"),
-                b -> dualupa$connectToServer(),
-                DuaLupaButton.Style.BLUE, "🏆"
-        ));
+                Text.literal("МИНИ-ИГРЫ · СКОРО"),
+                b -> {}, DuaLupaButton.Style.GRAY, "🏆"
+        );
+        mini.active = false;
+        this.addDrawableChild(mini);
 
+        // RPG — СКОРО
         DuaLupaButton rpg = new DuaLupaButton(
                 cx - bw / 2, y + (bh + gap) * 2, bw, bh,
                 Text.literal("RPG · СКОРО"),
